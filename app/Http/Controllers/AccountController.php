@@ -89,14 +89,14 @@ class AccountController extends Controller
             $validatedRequest = UpdateCustomerRequest::createFromBase($request);
 
             $customerController = new CustomerController();
-            $reponse1 = $customerController->update($validatedRequest, $user->customer);
+            $customerController->update($validatedRequest, $user->customer);
         }
         else if($user->hasRole('store_owner'))
         {
             $validatedRequest = UpdateStoreOwnerRequest::createFromBase($request);
 
             $customerController = new StoreOwnerController();
-            $reponse1 = $customerController->update($validatedRequest, $user->storeOwner);
+            $customerController->update($validatedRequest, $user->storeOwner);
         }
 
         $user->fill($validatedData);
@@ -114,7 +114,6 @@ class AccountController extends Controller
         return response()->json([
             'message' => 'Profile updated successfully.',
             'user' => $user,
-            'data' => $reponse1
         ]);
     }
 
@@ -169,7 +168,7 @@ class AccountController extends Controller
                 $permission->setRole('reader');
                 $service->permissions->create($fileId, $permission);
 
-                $shareableLink = "https://drive.google.com/file/d/{$fileId}/view?usp=sharing";
+                $shareableLink = "https://drive.google.com/uc?id={$fileId}";
 
                 $user->profile_pic = $shareableLink;
                 $user->save();

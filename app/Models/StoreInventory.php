@@ -14,4 +14,9 @@ class StoreInventory extends Model
     {
         return $this->belongsTo(Product::class);
     }
+    
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
+    }
 }

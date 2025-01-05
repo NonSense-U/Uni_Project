@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Store;
 use App\Http\Requests\StoreStoreRequest;
 use App\Http\Requests\UpdateStoreRequest;
+use Google\Service\Drive\Permission;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class StoreController extends Controller
@@ -26,13 +28,63 @@ class StoreController extends Controller
     {
         $validated = $request->validate([
             'storeName' => ['string','max:255'],
-            'stars' => ['integer']
+            'location' =>['string','max:255'],
+            'stars' => ['integer','nullable'],
+            'file' => 'nullable|file|mimes:jpg,png,pdf,docx|max:2048',
         ]);
+
         $store = Store::create([
             'store_owner_id' => $request->user()->StoreOwner->id,
             'storeName' => $request->storeName,
-            'stars' => $request->stars
+            'stars' => $request->stars,
+            'location' => $request->location
         ]);
+
+        if($request->file!=null)
+        {
+            $file = $request->file('file');
+            $fileName = $store->id;
+
+            $googleDrivePath = 'uploads/' .$fileName ;
+
+            $uploadSuccess = Storage::disk('google')->put($googleDrivePath, file_get_contents($file));
+
+            if ($uploadSuccess) {
+
+                $client = new \Google\Client();
+                $client->setClientId(config('filesystems.disks.google.clientId'));
+                $client->setClientSecret(config('filesystems.disks.google.clientSecret'));
+                $client->refreshToken(config('filesystems.disks.google.refreshToken'));
+
+                $service = new \Google\Service\Drive($client);
+
+                // Search for the file by name to get its ID
+                $response = $service->files->listFiles([
+                    'q' => "name='{$fileName}' and trashed=false",
+                    'fields' => 'files(id, name)',
+                ]);
+
+                if (count($response->files) > 0) {
+                    $fileId = $response->files[0]->id;
+
+                    $permission = new Permission();
+                    $permission->setType('anyone');
+                    $permission->setRole('reader');
+                    $service->permissions->create($fileId, $permission);
+
+                    $shareableLink = "https://drive.google.com/uc?id={$fileId}";
+
+                    $store->storePicture = $shareableLink;
+                    $store->save();
+                } else {
+                    return response()->json(['error' => 'File not found after upload.'], 404);
+                }
+            } else {
+                return response()->json(['error' => 'Failed to upload file.'], 500);
+            }
+        }
+
+        if($request->ui) return redirect()->route('dashboard.home')->with('success', 'Operation successful!');
 
         return response()->json($store);
     }
@@ -80,17 +132,4 @@ class StoreController extends Controller
         return response()->json(["message" => "Your store has been successfully deleted !"],);
     }
 
-    public function searchByName(Request $request)
-    {
-        $validated = $request->validate([
-            'storeName' => 'required|string|max:255',
-        ]);
-
-        $stores = Store::where('storeName', 'like', '%' . $validated['storeName'] . '%')->get();
-        if(!$stores)
-        {
-            return response()->json(["message" => "There is no stores with the name {$request->storeName} ! "]);
-        }
-        return response()->json($stores);
-    }
 }

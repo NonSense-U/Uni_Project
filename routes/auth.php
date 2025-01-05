@@ -9,7 +9,11 @@ Route::post('/register', [AccountController::class, 'store'])
     ->middleware('guest')
     ->name('register');
 
-Route::post('/login', [AuthController::class, 'generateToken']);
+Route::get('/login',function(){
+    return view('auth.login');
+});
+
+Route::post('/login', [AuthController::class, 'generateToken'])->name('login');
 
 Route::get('/getTokens',function(Request $request){
 dd($request->user()->tokens);

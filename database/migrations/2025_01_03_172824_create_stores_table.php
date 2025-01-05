@@ -15,7 +15,10 @@ return new class extends Migration
         Schema::create('stores', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(StoreOwner::class)->constrained()->cascadeOnDelete();
-            $table->string("storeName");
+            $table->string("storeName")->unique();
+            $table->string("storePicture")->nullable();
+            $table->string("location");
+            $table->string("about")->nullable();
             $table->float('stars',1)->nullable();
             $table->timestamps();
         });

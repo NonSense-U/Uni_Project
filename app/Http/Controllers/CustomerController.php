@@ -58,6 +58,13 @@ class CustomerController extends Controller
             }
             $inventory->quantity-=$request->quantity;
             $inventory->save();
+
+            if($inventory->quantity == 0)
+            {
+                $inventoryController = new StoreInventoryController();
+                $inventoryController->check_stock($inventory,'empty');
+            }
+
         }
 
         return response()->json([$order],202);

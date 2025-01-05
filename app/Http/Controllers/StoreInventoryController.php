@@ -7,6 +7,7 @@ use App\Http\Requests\StoreStoreInventoryRequest;
 use App\Http\Requests\UpdateStoreInventoryRequest;
 use App\Models\Product;
 use App\Models\Store;
+use App\Notifications\InventoryNotification;
 use Illuminate\Http\Request;
 
 class StoreInventoryController extends Controller
@@ -18,7 +19,7 @@ class StoreInventoryController extends Controller
     {
         $store = Store::find($request->store_id);
 
-       return response()->json([$store->inventories],200);
+        return response()->json([$store->inventories], 200);
     }
 
     /**
@@ -28,27 +29,24 @@ class StoreInventoryController extends Controller
     {
         $store = Store::find($request->store_id);
 
-        if(!$store)
-        {
-            return response()->json(["message" => "there is no store with an id of {$request->store_id} !"],404);
+        if (!$store) {
+            return response()->json(["message" => "there is no store with an id of {$request->store_id} !"], 404);
         }
 
-        if($request->user()->storeOwner->id != $store->store_owner_id)
-        {
+        if ($request->user()->storeOwner->id != $store->store_owner_id) {
             return response()->json(["message" => "SHOO! You are not the Owner of this Store!"]);
         }
 
         $request->validate([
             'price' => ['integer'],
             'quantity' => ['integer'],
-            'productName' => ['string','max:255']
+            'productName' => ['string', 'max:255']
         ]);
 
-        $product  = Product::where('name',$request->productName)->first();
+        $product  = Product::where('name', $request->productName)->first();
 
-        if(!$product)
-        {
-           $product= Product::create([
+        if (!$product) {
+            $product = Product::create([
                 'name' => $request->productName
             ]);
         }
@@ -60,7 +58,7 @@ class StoreInventoryController extends Controller
             'quantity' => $request->quantity
         ]);
 
-        return response()->json(['message' => "{$request->productName} was successfully added to your inventory! "],202);
+        return response()->json(['message' => "{$request->productName} was successfully added to your inventory! "], 202);
     }
 
 
@@ -78,5 +76,11 @@ class StoreInventoryController extends Controller
     public function destroy(StoreInventory $storeInventory)
     {
         //
+    }
+
+    public function check_stock(StoreInventory $storeInventory,string $action)
+    {
+        //! notification should be sent to the store owner
+        $storeInventory->store->store_owner->user->notify(new InventoryNotification($action));
     }
 }

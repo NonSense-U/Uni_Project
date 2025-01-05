@@ -10,9 +10,12 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "babenkoivan/elastic-scout-driver": "^4.0",
+        "babenkoivan/elastic-scout-driver-plus": "^5.0",
         "google/apiclient": "^2.18",
         "laravel/framework": "^11.31",
         "laravel/sanctum": "^4.0",
+        "laravel/scout": "^10.11",
         "laravel/tinker": "^2.9",
         "league/flysystem": "^3.29",
         "masbug/flysystem-google-drive-ext": "^2.4",

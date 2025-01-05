@@ -19,7 +19,8 @@ class StoreFactory extends Factory
     {
         return [
             'storeName' => fake()->company(),
-            'store_owner_id' => StoreOwner::factory()
+            'store_owner_id' => StoreOwner::factory(),
+            'location' => fake()->city()
         ];
     }
 }
