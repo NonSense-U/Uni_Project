@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Storage;
 require __DIR__.'/auth.php';
 require __DIR__.'/profile.php';
 require __DIR__.'/basic.php';
+require __DIR__.'/customer.php';
 
 Route::get('/', function () {
     return response()->json(['name'=>'lol']);

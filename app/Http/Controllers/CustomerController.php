@@ -3,50 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
-use App\Http\Requests\StoreCustomerRequest;
 use App\Http\Requests\UpdateCustomerRequest;
+use App\Models\Order;
+use App\Models\Product;
+use App\Models\StoreInventory;
+use Illuminate\Http\Request;
 
 class CustomerController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreCustomerRequest $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Customer $customer)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Customer $customer)
-    {
-        //
-    }
 
     /**
      * Update the specified resource in storage.
@@ -63,16 +27,39 @@ class CustomerController extends Controller
 
         $customer->Save();
 
-        return response()->json([
-            "customer" => $customer
-        ]);
+        return response()->json([$customer]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Customer $customer)
+    public function place_order(Request $request)
     {
-        //
+        $validatedData = $request->validate([
+            'inventory_id' => ['integer'],
+            'quantity' => ['integer']
+        ]);
+
+        $inventory = StoreInventory::find($request->inventory_id);
+
+        if(!$inventory)
+        {
+            return response()->json(['message' => 'inventory not found T_T'],404);
+        }
+
+        $order = Order::create([
+            'customer_id' => $request->user()->customer->id,
+            'store_inventory_id' => $inventory->id,
+            'total_cost' => $request->quantity * $inventory->price
+        ]);
+
+        if($request->paid)
+        {
+            if($inventory->quantity < $request->quantity)
+            {
+                return response()->json(['message' => "There isn't enough {$inventory->product->name} in stock T_T "]);
+            }
+            $inventory->quantity-=$request->quantity;
+            $inventory->save();
+        }
+
+        return response()->json([$order],202);
     }
 }

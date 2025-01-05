@@ -20,14 +20,6 @@ class StoreController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
@@ -88,4 +80,17 @@ class StoreController extends Controller
         return response()->json(["message" => "Your store has been successfully deleted !"],);
     }
 
+    public function searchByName(Request $request)
+    {
+        $validated = $request->validate([
+            'storeName' => 'required|string|max:255',
+        ]);
+
+        $stores = Store::where('storeName', 'like', '%' . $validated['storeName'] . '%')->get();
+        if(!$stores)
+        {
+            return response()->json(["message" => "There is no stores with the name {$request->storeName} ! "]);
+        }
+        return response()->json($stores);
+    }
 }

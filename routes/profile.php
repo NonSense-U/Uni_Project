@@ -3,7 +3,7 @@
 use App\Http\Controllers\AccountController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/profile',[AccountController::class, 'update'])->middleware('auth:sanctum');
+Route::patch('/profile',[AccountController::class, 'update'])->middleware('auth:sanctum');
 
 Route::get('/test',[AccountController::class, 'test']);
 
@@ -12,3 +12,5 @@ Route::post('/upload-pic',[AccountController::class, 'upload_pic'])
 
 Route::post('/delete-pic',[AccountController::class, 'delete_pic'])
 ->middleware('auth:sanctum');
+
+Route::delete('/profile',[AccountController::class, 'destroy'])->middleware('auth:sanctum');

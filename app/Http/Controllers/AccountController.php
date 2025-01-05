@@ -118,6 +118,18 @@ class AccountController extends Controller
         ]);
     }
 
+    public function destroy(Request $request)
+    {
+        $user = User::find($request->user()->id);
+        if(!$user)
+        {
+            return response()->json(["message" => "This user does not exsist !",404]);
+        }
+        $user->delete();
+
+        return response()->json(["message"=>"Your account has been successfully removed !"]);
+    }
+
     public function upload_pic(Request $request)
     {
         $request->validate([
