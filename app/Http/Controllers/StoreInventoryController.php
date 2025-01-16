@@ -8,7 +8,9 @@ use App\Http\Requests\UpdateStoreInventoryRequest;
 use App\Models\Product;
 use App\Models\Store;
 use App\Notifications\InventoryNotification;
+use Google\Service\Drive\Permission;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class StoreInventoryController extends Controller
 {
@@ -17,9 +19,14 @@ class StoreInventoryController extends Controller
      */
     public function index(Request $request)
     {
-        $store = Store::find($request->store_id);
+        // Find the store and eager load inventories along with their products
+        $store = Store::with('inventories.product')->find($request->store_id);
 
-        return response()->json([$store->inventories], 200);
+        if (!$store) {
+            return response()->json(['error' => 'Store not found'], 404);
+        }
+
+        return response()->json($store->inventories, 200);
     }
 
     /**
@@ -47,7 +54,7 @@ class StoreInventoryController extends Controller
 
         if (!$product) {
             $product = Product::create([
-                'name' => $request->productName
+                'product_name' => $request->productName
             ]);
         }
 
@@ -58,7 +65,54 @@ class StoreInventoryController extends Controller
             'quantity' => $request->quantity
         ]);
 
-        return response()->json(['message' => "{$request->productName} was successfully added to your inventory! "], 202);
+
+        if ($request->file != null) {
+            $file = $request->file('file');
+            $fileName = $product->product_name;
+
+            $googleDrivePath = 'uploads/' . $fileName;
+
+            $uploadSuccess = Storage::disk('google')->put($googleDrivePath, file_get_contents($file));
+
+            if ($uploadSuccess) {
+
+                $client = new \Google\Client();
+                $client->setClientId(config('filesystems.disks.google.clientId'));
+                $client->setClientSecret(config('filesystems.disks.google.clientSecret'));
+                $client->refreshToken(config('filesystems.disks.google.refreshToken'));
+
+                $service = new \Google\Service\Drive($client);
+
+                // Search for the file by name to get its ID
+                $response = $service->files->listFiles([
+                    'q' => "name='{$fileName}' and trashed=false",
+                    'fields' => 'files(id, name)',
+                ]);
+
+                if (count($response->files) > 0) {
+                    $fileId = $response->files[0]->id;
+
+                    $permission = new Permission();
+                    $permission->setType('anyone');
+                    $permission->setRole('reader');
+                    $service->permissions->create($fileId, $permission);
+
+                    $shareableLink = "https://drive.google.com/uc?id={$fileId}";
+
+                    $storeInventory->productPicture = $shareableLink;
+                    $storeInventory->save();
+                } else {
+                    return response()->json(['error' => 'File not found after upload.'], 404);
+                }
+            } else {
+                return response()->json(['error' => 'Failed to upload file.'], 500);
+            }
+        }
+
+
+        $storeInventory->load('product');
+
+        return response()->json($storeInventory, 202);
     }
 
 
@@ -78,7 +132,7 @@ class StoreInventoryController extends Controller
         //
     }
 
-    public function check_stock(StoreInventory $storeInventory,string $action)
+    public function check_stock(StoreInventory $storeInventory, string $action)
     {
         //! notification should be sent to the store owner
         $storeInventory->store->store_owner->user->notify(new InventoryNotification($action));

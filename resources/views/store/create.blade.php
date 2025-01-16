@@ -182,7 +182,7 @@
 
                 if (response.ok) {
                     alert('Store created successfully!');
-                    window.location.href = '/dashboard';
+                    window.location.href = '/My_stores';
                 } else {
                     alert('Error creating store:'+ response.statusText);
                 }

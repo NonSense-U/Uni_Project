@@ -19,7 +19,7 @@ class ProductController extends Controller
     public function product_inventories(Request $request)
     {
         $product = Product::find($request->product_id);
-
+        
         return response()->json($product->stores);
     }
 }

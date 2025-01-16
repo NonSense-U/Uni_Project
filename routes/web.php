@@ -50,3 +50,10 @@ Route::get('/test_dashboard',function()
 Route::get('/create_store',function(Request $request){
     return view('store.create',['request' => $request]);
 })->middleware('auth:sanctum')->name('store.create_page');
+
+
+Route::get('/My_stores',function()
+{
+    $stores = Auth::user()->storeOwner->stores;
+return view('store.index',['stores'=>$stores]);
+});

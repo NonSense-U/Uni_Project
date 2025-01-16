@@ -31,13 +31,15 @@ class StoreController extends Controller
             'location' =>['string','max:255'],
             'stars' => ['integer','nullable'],
             'file' => 'nullable|file|mimes:jpg,png,pdf,docx|max:2048',
+            'about' => 'nullable|string'
         ]);
 
         $store = Store::create([
             'store_owner_id' => $request->user()->StoreOwner->id,
             'storeName' => $request->storeName,
             'stars' => $request->stars,
-            'location' => $request->location
+            'location' => $request->location,
+            'about' => $request->about
         ]);
 
         if($request->file!=null)
